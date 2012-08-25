@@ -41,6 +41,7 @@
 #include <dhd_bus.h>
 #include <dhd_dbg.h>
 #include <asm/mach-types.h>
+#include <custom.h>
 
 /* Packet alignment for most efficient SDIO (can change based on platform) */
 #ifndef DHD_SDALIGN
@@ -1032,6 +1033,9 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 //	uint32					pattern_size;
 	char buf[256];
 	char mac_buf[16];
+#ifdef CUSTOM_MAC
+	struct ether_addr ea_addr;
+#endif
 	uint filter_mode = 1;
 	wl_keep_alive_pkt_t keep_alive_pkt;
 	wl_keep_alive_pkt_t *keep_alive_pktp;
@@ -1053,7 +1057,17 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	dhdcdc_query_ioctl(dhd, 0, WLC_GET_VAR, buf, sizeof(buf));
 	myprintf("firmware version: %s", buf);
 
-
+#ifdef CUSTOM_MAC
+	if (custom_get_mac_addr(ea_addr.octet) != -EINVAL)
+	{
+		bcm_mkiovar("cur_etheraddr", (void *)&ea_addr, ETHER_ADDR_LEN, buf, sizeof(buf));
+		ret = dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, buf, sizeof(buf));
+		if (ret < 0) {
+			DHD_ERROR(("%s: can't set MAC address , error=%d\n", __FUNCTION__, ret));
+		}
+	}
+#endif
+	
 	/* Get the device MAC address */
 	strcpy(iovbuf, "cur_etheraddr");
 	if ((ret = dhdcdc_query_ioctl(dhd, 0, WLC_GET_VAR, iovbuf, sizeof(iovbuf))) < 0) {
@@ -1062,7 +1076,7 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		return BCME_NOTUP;
 	}
 	memcpy(dhd->mac.octet, iovbuf, ETHER_ADDR_LEN);
-
+	
 	/* Set Country code */
 	if (dhd->country_code[0] != 0) {
 		if (dhdcdc_set_ioctl(dhd, 0, WLC_SET_COUNTRY,
