@@ -1167,9 +1167,10 @@ static void ds2784_battery_algorithm(struct ds2784_device_info *di)
 			(htc_batt_info.rep.guage_status_reg & 0x80) &&
 			(htc_batt_info.rep.batt_current <= 80) &&
 			(htc_batt_info.rep.full_acr == 0)) {
+				/* LEAVE THE ACR VALUE F*CKING ALONE!
 				acr[0] = 0x0d;
 				acr[1] = 0x87;
-				w1_ds2784_write(di->w1_dev, acr, DS2784_REG_ACCUMULATE_CURR_MSB, 2);
+				w1_ds2784_write(di->w1_dev, acr, DS2784_REG_ACCUMULATE_CURR_MSB, 2);*/
 				htc_batt_info.rep.full_acr = 1;
 				pr_info("[HTC_BATT] Current Full ACR = %x %x\n", acr[0], acr[1]);
 				pr_info("[HTC_BATT] Recharging should set ACR to 100 percent\n");
